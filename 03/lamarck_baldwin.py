@@ -11,7 +11,7 @@ MAX_GEN = 500  # maximum number of generations
 CX_PROB = 0.8  # crossover probability
 MUT_PROB = 0.2  # mutation probability
 MUT_STEP = 0.5  # size of the mutation steps
-REPEATS = 10  # number of runs of algorithm (should be at least 10)
+REPEATS = 2  # number of runs of algorithm (should be at least 10)
 OUT_DIR = 'continuous'  # output directory for logs
 
 # creates the individual
@@ -122,11 +122,9 @@ def evolutionary_algorithm(
 ):
     evals = 0
     for G in range(max_gen):
-        # Apply genetic operators
+        # Evaluate the current population
         fits_objs = list(map_fn(fitness, pop))
         evals += len(pop)
-        if log:
-            log.add_gen(fits_objs, evals)
         fits = [f.fitness for f in fits_objs]
         objs = [f.objective for f in fits_objs]
 
@@ -147,22 +145,16 @@ def evolutionary_algorithm(
                     new_offspring.append(ind)
             offspring = new_offspring[:]
 
-            # Evaluate offspring
-            fits_objs = []
-            for ind in offspring:
-                if use_baldwinian:
-                    # Evaluate fitness based on improved phenotype
-                    improved_ind = hill_climb(ind, fitness)
-                    fits_objs.append(fitness(improved_ind))
-                else:
-                    fits_objs.append(fitness(ind))
-            evals += len(offspring)
-            if log:
-                log.add_gen(fits_objs, evals)
-            fits = [f.fitness for f in fits_objs]
-            objs = [f.objective for f in fits_objs]
-
+        # Update population
         pop = offspring[:]
+
+        # Evaluate the new population (after local search if any)
+        fits_objs = list(map_fn(fitness, pop))
+        evals += len(pop)
+
+        # Logging after all operations in the generation
+        if log:
+            log.add_gen(fits_objs, evals)
 
     return pop
 
